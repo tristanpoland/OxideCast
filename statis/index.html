@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multicast Streaming Server</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header h1 {
+            color: white;
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+
+        .nav {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .nav a {
+            color: rgba(255, 255, 255, 0.9);
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            transition: background-color 0.3s ease;
+        }
+
+        .nav a:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .main {
+            flex: 1;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .hero {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 3rem;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            max-width: 800px;
+            margin-bottom: 2rem;
+        }
+
+        .hero h2 {
+            color: white;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+
+        .hero p {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        .feature {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .feature:hover {
+            transform: translateY(-5px);
+        }
+
+        .feature h3 {
+            color: white;
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .feature p {
+            color: rgba(255, 255, 255, 0.8);
+            line-height: 1.5;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .footer {
+            background: rgba(0, 0, 0, 0.2);
+            color: rgba(255, 255, 255, 0.8);
+            text-align: center;
+            padding: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .status {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 1rem;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            margin-top: 2rem;
+            max-width: 400px;
+        }
+
+        .status h4 {
+            color: white;
+            margin-bottom: 0.5rem;
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 0.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 1rem;
+            }
+
+            .hero {
+                padding: 2rem;
+            }
+
+            .hero h2 {
+                font-size: 2rem;
+            }
+
+            .buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .btn {
+                width: 200px;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>🎥 Multicast Streaming Server</h1>
+        <nav class="nav">
+            <a href="/">Home</a>
+            <a href="/player">Player</a>
+            <a href="/api/v1/stats">API</a>
+            <a href="https://github.com/your-repo/multicast-streaming-server" target="_blank">Documentation</a>
+        </nav>
+    </header>
+
+    <main class="main">
+        <div class="hero">
+            <h2>Production-Ready Streaming</h2>
+            <p>
+                High-performance media streaming server with multicast distribution, 
+                real-time transcoding, and multiple delivery protocols including HLS, WebRTC, and RTMP.
+            </p>
+            <div class="buttons">
+                <a href="/player" class="btn btn-primary">Watch Streams</a>
+                <a href="/api/v1/streams" class="btn btn-secondary">API Documentation</a>
+            </div>
+        </div>
+
+        <div class="features">
+            <div class="feature">
+                <h3>🌐 Multicast Distribution</h3>
+                <p>Efficient one-to-many streaming that scales to thousands of viewers with minimal bandwidth usage.</p>
+            </div>
+            <div class="feature">
+                <h3>⚡ Real-time Transcoding</h3>
+                <p>Hardware-accelerated transcoding with multiple quality profiles and adaptive bitrate streaming.</p>
+            </div>
+            <div class="feature">
+                <h3>🔄 Multiple Protocols</h3>
+                <p>Support for RTMP ingest, HLS playback, WebRTC low-latency streaming, and multicast distribution.</p>
+            </div>
+            <div class="feature">
+                <h3>📊 Analytics & Monitoring</h3>
+                <p>Comprehensive metrics, viewer analytics, and system monitoring with real-time dashboards.</p>
+            </div>
+            <div class="feature">
+                <h3>🔐 Authentication & Security</h3>
+                <p>JWT-based authentication, role-based access control, and secure stream key management.</p>
+            </div>
+            <div class="feature">
+                <h3>☁️ Production Ready</h3>
+                <p>Built with Rust for performance and reliability, with PostgreSQL for data persistence.</p>
+            </div>
+        </div>
+
+        <div class="status" id="serverStatus">
+            <h4>Server Status</h4>
+            <div class="status-item">
+                <span>Status:</span>
+                <span id="status">Loading...</span>
+            </div>
+            <div class="status-item">
+                <span>Active Streams:</span>
+                <span id="activeStreams">-</span>
+            </div>
+            <div class="status-item">
+                <span>Total Viewers:</span>
+                <span id="totalViewers">-</span>
+            </div>
+            <div class="status-item">
+                <span>Version:</span>
+                <span id="version">-</span>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>&copy; 2024 Multicast Streaming Server. Built with Rust 🦀</p>
+    </footer>
+
+    <script>
+        // Load server status
+        async function loadServerStatus() {
+            try {
+                const response = await fetch('/health');
+                const health = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('status').textContent = '🟢 Online';
+                    document.getElementById('version').textContent = health.version || 'Unknown';
+                } else {
+                    document.getElementById('status').textContent = '🔴 Error';
+                }
+
+                // Try to load basic stats (might require auth)
+                try {
+                    const statsResponse = await fetch('/api/v1/stats');
+                    if (statsResponse.ok) {
+                        const stats = await statsResponse.json();
+                        if (stats.success) {
+                            document.getElementById('activeStreams').textContent = stats.data.active_streams;
+                            document.getElementById('totalViewers').textContent = stats.data.total_viewers;
+                        }
+                    } else {
+                        // If stats require auth, show placeholder
+                        document.getElementById('activeStreams').textContent = 'Auth Required';
+                        document.getElementById('totalViewers').textContent = 'Auth Required';
+                    }
+                } catch (statsError) {
+                    console.log('Stats not available:', statsError);
+                    document.getElementById('activeStreams').textContent = 'N/A';
+                    document.getElementById('totalViewers').textContent = 'N/A';
+                }
+
+            } catch (error) {
+                console.error('Failed to load server status:', error);
+                document.getElementById('status').textContent = '🔴 Offline';
+            }
+        }
+
+        // Load status on page load
+        loadServerStatus();
+
+        // Refresh status every 30 seconds
+        setInterval(loadServerStatus, 30000);
+    </script>
+</body>
+</html>

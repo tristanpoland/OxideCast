@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stream Player - Multicast Streaming Server</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            min-height: 100vh;
+            color: white;
+        }
+
+        .header {
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+
+        .nav {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .nav a {
+            color: rgba(255, 255, 255, 0.9);
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            transition: background-color 0.3s ease;
+        }
+
+        .nav a:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .streams-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stream-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            overflow: hidden;
+            transition: transform 0.3s ease;
+            cursor: pointer;
+        }
+
+        .stream-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stream-thumbnail {
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(45deg, #34495e, #2c3e50);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            position: relative;
+        }
+
+        .live-indicator {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: #e74c3c;
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: white;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .stream-info {
+            padding: 1.5rem;
+        }
+
+        .stream-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: white;
+        }
+
+        .stream-description {
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 1rem;
+            line-height: 1.4;
+        }
+
+        .stream-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+        }
+
+        .viewer-count {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .category {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.2rem 0.8rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+        }
+
+        .player-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .player-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .player-header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 50%;
+            transition: background-color 0.3s ease;
+        }
+
+        .close-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .video-player {
+            width: 90%;
+            max-width: 1200px;
+            aspect-ratio: 16/9;
+            background: #000;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .video-element {
+            width: 100%;
+            height: 100%;
+        }
+
+        .player-controls {
+            margin-top: 1rem;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .quality-selector {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .quality-selector option {
+            background: #2c3e50;
+            color: white;
+        }
+
+        .connection-info {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .error {
+            background: rgba(231, 76, 60, 0.2);
+            border: 1px solid rgba(231, 76, 60, 0.5);
+            color: #e74c3c;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+
+        .no-streams {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .no-streams h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .streams-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .player-container {
+                padding: 1rem;
+            }
+            
+            .video-player {
+                width: 100%;
+            }
+            
+            .player-controls {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>🎥 Stream Player</h1>
+        <nav class="nav">
+            <a href="/">Home</a>
+            <a href="/player">Player</a>
+            <a href="/api/v1/streams">API</a>
+        </nav>
+    </header>
+
+    <div class="container">
+        <div id="streamsContainer">
+            <div class="loading">
+                <p>Loading streams...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Player Modal -->
+    <div id="playerModal" class="player-modal">
+        <div class="player-container">
+            <div class="player-header">
+                <div>
+                    <h2 id="playerTitle">Stream Title</h2>
+                    <p id="playerMeta">Loading...</p>
+                </div>
+                <button class="close-btn" onclick="closePlayer()">&times;</button>
+            </div>
+            
+            <div class="video-player">
+                <video id="videoElement" class="video-element" controls autoplay muted>
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+            
+            <div class="player-controls">
+                <select id="qualitySelector" class="quality-selector" onchange="changeQuality()">
+                    <option value="hls">HLS (Default)</option>
+                    <option value="webrtc">WebRTC (Low Latency)</option>
+                </select>
+                
+                <div class="connection-info" id="connectionInfo">
+                    Connection: Connecting...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentStream = null;
+        let hls = null;
+
+        // Load live streams
+        async function loadStreams() {
+            try {
+                const response = await fetch('/api/v1/streams?limit=50');
+                const data = await response.json();
+
+                const container = document.getElementById('streamsContainer');
+
+                if (!data.success) {
+                    container.innerHTML = '<div class="error">Failed to load streams: ' + (data.error || 'Unknown error') + '</div>';
+                    return;
+                }
+
+                const streams = data.data.items || [];
+
+                if (streams.length === 0) {
+                    container.innerHTML = `
+                        <div class="no-streams">
+                            <h3>No Live Streams</h3>
+                            <p>There are currently no live streams available. Check back later!</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const streamsGrid = document.createElement('div');
+                streamsGrid.className = 'streams-grid';
+
+                streams.forEach(stream => {
+                    const streamCard = createStreamCard(stream);
+                    streamsGrid.appendChild(streamCard);
+                });
+
+                container.innerHTML = '';
+                container.appendChild(streamsGrid);
+
+            } catch (error) {
+                console.error('Failed to load streams:', error);
+                document.getElementById('streamsContainer').innerHTML = 
+                    '<div class="error">Failed to load streams. Please try again later.</div>';
+            }
+        }
+
+        function createStreamCard(stream) {
+            const card = document.createElement('div');
+            card.className = 'stream-card';
+            card.onclick = () => openPlayer(stream);
+
+            const isLive = stream.is_live;
+            const viewerCount = stream.viewer_count || 0;
+
+            card.innerHTML = `
+                <div class="stream-thumbnail">
+                    ${isLive ? '<div class="live-indicator"><div class="live-dot"></div>LIVE</div>' : ''}
+                    🎬
+                </div>
+                <div class="stream-info">
+                    <div class="stream-title">${escapeHtml(stream.title)}</div>
+                    <div class="stream-description">${escapeHtml(stream.description || 'No description available')}</div>
+                    <div class="stream-meta">
+                        <div class="viewer-count">
+                            👥 ${viewerCount} viewer${viewerCount !== 1 ? 's' : ''}
+                        </div>
+                        ${stream.category ? `<div class="category">${escapeHtml(stream.category)}</div>` : ''}
+                    </div>
+                </div>
+            `;
+
+            return card;
+        }
+
+        async function openPlayer(stream) {
+            if (!stream.is_live) {
+                alert('This stream is not currently live.');
+                return;
+            }
+
+            currentStream = stream;
+            document.getElementById('playerTitle').textContent = stream.title;
+            document.getElementById('playerMeta').textContent = `${stream.viewer_count || 0} viewers`;
+            document.getElementById('playerModal').style.display = 'block';
+
+            // Start with HLS by default
+            await playHLS(stream.id);
+        }
+
+        function closePlayer() {
+            document.getElementById('playerModal').style.display = 'none';
+            
+            const video = document.getElementById('videoElement');
+            video.pause();
+            video.src = '';
+
+            if (hls) {
+                hls.destroy();
+                hls = null;
+            }
+
+            currentStream = null;
+        }
+
+        async function changeQuality() {
+            if (!currentStream) return;
+
+            const quality = document.getElementById('qualitySelector').value;
+            
+            if (quality === 'hls') {
+                await playHLS(currentStream.id);
+            } else if (quality === 'webrtc') {
+                await playWebRTC(currentStream.id);
+            }
+        }
+
+        async function playHLS(streamId) {
+            try {
+                const response = await fetch(`/api/v1/streams/${streamId}/url?connection_type=hls`);
+                const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(data.error || 'Failed to get HLS URL');
+                }
+
+                const video = document.getElementById('videoElement');
+                
+                if (hls) {
+                    hls.destroy();
+                }
+
+                if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                    // Native HLS support (Safari)
+                    video.src = data.data.url;
+                } else if (typeof Hls !== 'undefined' && Hls.isSupported()) {
+                    // Use HLS.js for other browsers
+                    hls = new Hls();
+                    hls.loadSource(data.data.url);
+                    hls.attachMedia(video);
+                } else {
+                    throw new Error('HLS is not supported in this browser');
+                }
+
+                document.getElementById('connectionInfo').textContent = `Connection: HLS - ${data.data.url}`;
+
+            } catch (error) {
+                console.error('HLS playback error:', error);
+                document.getElementById('connectionInfo').innerHTML = 
+                    `<span style="color: #e74c3c;">HLS Error: ${error.message}</span>`;
+            }
+        }
+
+        async function playWebRTC(streamId) {
+            try {
+                // This would implement WebRTC playback
+                // For now, show a placeholder
+                document.getElementById('connectionInfo').innerHTML = 
+                    '<span style="color: #f39c12;">WebRTC playback not yet implemented in this demo</span>';
+                
+            } catch (error) {
+                console.error('WebRTC playback error:', error);
+                document.getElementById('connectionInfo').innerHTML = 
+                    `<span style="color: #e74c3c;">WebRTC Error: ${error.message}</span>`;
+            }
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('playerModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closePlayer();
+            }
+        });
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closePlayer();
+            }
+        });
+
+        // Load streams on page load
+        loadStreams();
+
+        // Refresh streams every 30 seconds
+        setInterval(loadStreams, 30000);
+
+        // Try to load HLS.js for browsers that need it
+        if (typeof Hls === 'undefined') {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/hls.js@1.4.12/dist/hls.min.js';
+            document.head.appendChild(script);
+        }
+    </script>
+</body>
+</html>

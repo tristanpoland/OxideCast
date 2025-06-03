@@ -1,0 +1,174 @@
+# Multicast Streaming Server Configuration
+
+[server]
+host = "0.0.0.0"
+port = 8080
+workers = 4
+max_connections = 10000
+keep_alive = 30
+secret_key = "your-very-secure-secret-key-change-this-in-production-must-be-long-enough"
+
+[database]
+url = "postgresql://streaming_user:streaming_password@localhost:5432/streaming_db"
+max_connections = 100
+min_connections = 5
+connect_timeout = 30
+idle_timeout = 600
+
+[auth]
+jwt_secret = "your-jwt-secret-key-change-this-in-production-must-be-at-least-32-characters-long"
+jwt_expiry = 3600  # 1 hour
+refresh_expiry = 604800  # 7 days
+bcrypt_cost = 12
+require_email_verification = false
+
+[rtmp]
+bind_address = "0.0.0.0:1935"
+chunk_size = 4096
+max_connections = 1000
+connection_timeout = 30
+stream_timeout = 300
+buffer_size = 1048576  # 1MB
+enable_auth = true
+
+[multicast]
+interface = "0.0.0.0"
+base_address = "239.255.0.1"
+port_range = [30000, 40000]
+ttl = 64
+buffer_size = 1048576  # 1MB
+packet_size = 1400
+group_timeout = 300
+enable_igmp = true
+
+[transcoding]
+ffmpeg_path = "/usr/bin/ffmpeg"
+max_concurrent = 10
+temp_dir = "/tmp/streaming"
+
+[transcoding.hardware_acceleration]
+enabled = false
+device = "cuda"  # cuda, vaapi, qsv, videotoolbox
+codec = "h264_nvenc"
+
+[[transcoding.video_codecs]]
+name = "h264"
+encoder = "libx264"
+hardware = false
+options = [
+    ["preset", "medium"],
+    ["tune", "zerolatency"],
+    ["profile", "main"],
+    ["level", "4.0"]
+]
+
+[[transcoding.video_codecs]]
+name = "h264_nvenc"
+encoder = "h264_nvenc"
+hardware = true
+options = [
+    ["preset", "llhq"],
+    ["tune", "ll"],
+    ["profile", "main"]
+]
+
+[[transcoding.audio_codecs]]
+name = "aac"
+encoder = "aac"
+bitrate = 128000
+channels = 2
+sample_rate = 48000
+
+[[transcoding.audio_codecs]]
+name = "opus"
+encoder = "libopus"
+bitrate = 128000
+channels = 2
+sample_rate = 48000
+
+[[transcoding.profiles]]
+name = "1080p"
+width = 1920
+height = 1080
+bitrate = 5000000
+framerate = 30.0
+keyframe_interval = 60
+audio_bitrate = 192000
+
+[[transcoding.profiles]]
+name = "720p"
+width = 1280
+height = 720
+bitrate = 2500000
+framerate = 30.0
+keyframe_interval = 60
+audio_bitrate = 128000
+
+[[transcoding.profiles]]
+name = "480p"
+width = 854
+height = 480
+bitrate = 1000000
+framerate = 30.0
+keyframe_interval = 60
+audio_bitrate = 96000
+
+[[transcoding.profiles]]
+name = "360p"
+width = 640
+height = 360
+bitrate = 500000
+framerate = 30.0
+keyframe_interval = 60
+audio_bitrate = 64000
+
+[webrtc]
+stun_servers = [
+    "stun:stun.l.google.com:19302",
+    "stun:stun1.l.google.com:19302"
+]
+ice_timeout = 30
+dtls_timeout = 30
+max_bitrate = 5000000
+min_bitrate = 100000
+enable_simulcast = true
+
+[[webrtc.turn_servers]]
+url = "turn:your-turn-server.com:3478"
+username = "your-turn-username"
+credential = "your-turn-password"
+
+[hls]
+segment_duration = 6
+playlist_length = 10
+segment_directory = "/tmp/streaming/hls"
+cleanup_interval = 300
+enable_low_latency = false
+partial_segment_duration = 0.2
+
+[storage]
+base_path = "/data/streaming"
+recordings_path = "/data/streaming/recordings"
+thumbnails_path = "/data/streaming/thumbnails"
+max_storage_size = 107374182400  # 100GB
+cleanup_interval = 3600
+enable_s3 = false
+
+[storage.s3_config]
+bucket = "your-streaming-bucket"
+region = "us-east-1"
+access_key = "your-access-key"
+secret_key = "your-secret-key"
+endpoint = "https://s3.amazonaws.com"
+
+[logging]
+level = "info"
+
+[logging.output]
+Stdout = true
+
+[logging.rotation]
+enabled = false
+max_size = 104857600  # 100MB
+max_age = 604800     # 7 days
+max_files = 10

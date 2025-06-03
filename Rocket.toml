@@ -1,0 +1,52 @@
+[default]
+address = "0.0.0.0"
+port = 8080
+workers = 4
+max_blocking = 512
+keep_alive = 30
+log_level = "normal"
+secret_key = "your-very-secure-secret-key-change-this-in-production-must-be-long-enough"
+
+[default.databases.postgres]
+url = "postgresql://streaming_user:streaming_password@localhost:5432/streaming_db"
+pool_size = 100
+timeout = 30
+
+[development]
+address = "127.0.0.1"
+port = 8080
+workers = 2
+max_blocking = 256
+keep_alive = 5
+log_level = "debug"
+
+[development.databases.postgres]
+url = "postgresql://streaming_user:streaming_password@localhost:5432/streaming_dev"
+pool_size = 10
+timeout = 30
+
+[production]
+address = "0.0.0.0"
+port = 8080
+workers = 8
+max_blocking = 1024
+keep_alive = 30
+log_level = "critical"
+
+[production.databases.postgres]
+url = "postgresql://streaming_user:streaming_password@postgres:5432/streaming_db"
+pool_size = 200
+timeout = 30
+
+[testing]
+address = "127.0.0.1"
+port = 0  # Random port for testing
+workers = 1
+max_blocking = 64
+keep_alive = 0
+log_level = "off"
+
+[testing.databases.postgres]
+url = "postgresql://streaming_user:streaming_password@localhost:5432/streaming_test"
+pool_size = 5
+timeout = 10

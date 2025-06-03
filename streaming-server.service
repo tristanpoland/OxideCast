@@ -1,0 +1,53 @@
+[Unit]
+Description=Multicast Streaming Server
+Documentation=https://github.com/your-repo/multicast-streaming-server
+After=network.target postgresql.service
+Wants=network.target
+Requires=postgresql.service
+
+[Service]
+Type=exec
+User=streaming
+Group=streaming
+WorkingDirectory=/opt/streaming-server
+ExecStart=/opt/streaming-server/multicast-streaming-server --config /etc/streaming-server/config.toml
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=10
+StartLimitInterval=60
+StartLimitBurst=3
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/streaming-server /var/log/streaming-server /tmp/streaming
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+RestrictNamespaces=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+
+# Resource limits
+LimitNOFILE=1048576
+LimitNPROC=32768
+MemoryHigh=4G
+MemoryMax=8G
+CPUQuota=200%
+
+# Environment
+Environment=RUST_LOG=info
+Environment=RUST_BACKTRACE=1
+Environment=DATABASE_URL=postgresql://streaming_user:streaming_password@localhost:5432/streaming_db
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=streaming-server
+
+[Install]
+WantedBy=multi-user.target
